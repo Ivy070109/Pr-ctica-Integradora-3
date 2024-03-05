@@ -22,12 +22,12 @@ import loggerRoutes from './routes/logger.router.js'
 import config from "./config.js"
 
 if (cluster.isPrimary) {
-    for (let i = 0; i < os.cpus().length; i++) cluster.fork();
+    for (let i = 0; i < os.cpus().length; i++) cluster.fork()
 
     cluster.on('disconnect', worker => {
-        console.log(`Se cayó la instancia PID ${worker.process.pid}`);
-        cluster.fork();
-    });
+        console.log(`Se cayó la instancia PID ${worker.process.pid}`)
+        cluster.fork()
+    })
 } else {
     try {    
         const app = express()
