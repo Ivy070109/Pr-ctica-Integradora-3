@@ -41,6 +41,14 @@ class UsersManager {
             return err.message
         }
     }
+
+    updateUser = async (uid, user) => {
+        try {
+            return await userService.updateUser(uid, user)
+        } catch (err) {
+            return err.message
+        }
+    }
 }
 
 export default UsersManager

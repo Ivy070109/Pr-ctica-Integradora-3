@@ -49,7 +49,7 @@ router.put('/premium/:uid', authToken, handlePolicies(['user']), async (req, res
         if (user.role === "user") user.role = "premium"
         else user.role = "user"
 
-        //Actualizamos usuario en la base con su nuevo role.
+        //Actualizamos usuario en la base con su nuevo role
         await userModel.updateOne({ _id: uid }, user)
 
         res.status(200).send({ status: 'OK', data: "Role cambiado exitosamente."})

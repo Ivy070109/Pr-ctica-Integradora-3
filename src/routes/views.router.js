@@ -65,8 +65,7 @@ router.get('/restore', publicAccess, async (req, res) => {
 })
 
 // verifico el token
-router.get('/restorePass/:token', publicAccess, async (req, res) => {
-    // valido el token
+router.get('/restorePass/:token', async (req, res) => {    
     res.render('restorePass')
 })
 

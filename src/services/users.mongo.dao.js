@@ -45,4 +45,14 @@ export class UserService {
             return err.message
         }
     }
+
+    updateUser = async (uid, user) => {
+        try {
+            const update = await usersModels.updateOne({ _id: uid }, user)
+            return update
+        } catch (err) {
+            return err.message
+        }
+    }
 }
+

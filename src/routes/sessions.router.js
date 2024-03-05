@@ -1,7 +1,5 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
-// import bcrypt from 'bcrypt'
-import crypto from 'crypto'
 import { createHash, isValidPassword, generateToken, sendConfirmation, sendRestore } from '../utils.js'
 import initPassport from '../auth/passport.auth.js'
 import { passportCall, authToken } from '../auth/authToken.pass.js'
@@ -9,6 +7,7 @@ import { handlePolicies } from '../middlewares/authenticate.js'
 import userModel from '../models/users.model.js'
 import nodemailer from 'nodemailer'
 import config from '../config.js'
+import UsersManager from '../controllers/UserManager.js'
 
 initPassport()
 
@@ -118,17 +117,15 @@ router.post('/restore', async (req, res) => {
         if (!email) return res.status(400).send({ status: "error", error: "Valores inexistentes" })
 
         //Verificar existencia de usuario en db
-        let user = await userModel.findOne({ email })
+        const user = await userModel.findOne({ email })
         if (!user) return res.status(400).send({ status: "error", error: "Usuario no encontrado" })
 
         // Si el usuario si existe se genera un token
         const token = generateToken({ email }, '1h')
-        //console.log(generateToken({ email }, '1h'))
-
-        user.save()
+        //console.log(token)
 
         const resetUrl = `http://${req.headers.host}/restorePass/${token}`
-        //console.log(resetUrl)
+        console.log(resetUrl)
 
         // Enviar un correo con el enlace para restablecer la contraseña
         const transporter = nodemailer.createTransport({
@@ -158,6 +155,7 @@ router.post('/restore', async (req, res) => {
             if (error) {
                 console.log(error)
             } else {
+                // res.cookie('newCommerce', token, { maxAge: 60 * 60 * 1000, httpOnly: true })
                 res.status(200).send({ status: 'OK', data: "Revise su correo, se le envió un enlace para restablecer su contraseña" })
             }
         })
@@ -168,26 +166,27 @@ router.post('/restore', async (req, res) => {
 })
 
 // Actualizar contraseña
+// al parecer el post y el action en handlebars no logra coincidir con el router --- 
 router.post('/restorePass/:token', async (req, res) => {
     try {
-        const tokenUser = req.params.token
-        if (!tokenUser) return res.redirect('/restore')
-        
+        const { token } = req.params 
+        if(!token) return res.status(400).send({ status: "ERR", error: "Token inexistente" })
+
         const newPassword = req.body
         if (!newPassword) return res.status(400).send({ status: 'ERR', data: 'Por favor ingrese la nueva contraseña' })
 
-        // verificar la existencia de usuario
-        const email = jwt.verify(tokenUser, config.PRIVATE_KEY)
-        const user = await userModel.findOne({ email })
-        if (!user) return res.status(400).send({ status: 'ERR', data: 'Usuario no encontrado' })
+        const { email } = jwt.verify(token, config.PRIVATE_KEY)
+        const user = await userModel.findOne(email)
+        if (!user) return res.status(400).send({ status: 'ERR', data: 'Usuario inexistente' })
 
-        //verificación de contraseñas
         if (isValidPassword(user, newPassword)) return res.status(400).send({ status: 'ERR', data: 'Las contraseñas deben ser diferentes' })
 
-        //actualizar la constraseña
+        // //actualizar la constraseña
         user.password = createHash(newPassword)
 
-        await userModel.findByIdAndUpdate( user._id, user)
+        //Actualizamos usuario en la base con su nuevo password.
+        await UsersManager.updateUser(user._id, user)
+
         res.status(200).send({ status: 'OK', data: 'Contraseña actualizada' })
 
     } catch (err) {
